@@ -188,12 +188,13 @@ for linha in dados_base:
         
         resultados.append({
             "Fase": linha["fase"],
+            "Produto": produto_fase, # NOVO: Nome do produto selecionado
             "Semana": f"{linha['semana']}ª",
             "Peso Inicial (g)": linha["p_ini"],
             "Peso Final (g)": linha["p_fim"],
             "Ração/Dia (kg)": round(racao_dia, 1),
             "Ração/Semana (kg)": round(racao_semana, 1),
-            "Ração/Semana (sacas)": round(sacas_necessarias, 1),
+            "Ração/Semana (sacas de 25kg)": round(sacas_necessarias, 1),
             "Custo/Semana (R$)": round(custo_semana, 2)
         })
 
