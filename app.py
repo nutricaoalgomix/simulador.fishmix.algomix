@@ -148,9 +148,9 @@ for linha in dados_base:
             "Peso Inicial (g)": linha["p_ini"],
             "Peso Final (g)": linha["p_fim"],
             "Ração/Dia (kg)": round(racao_dia, 1),
-            "Total Ração (kg)": round(racao_semana, 1),
-            "Sacas": round(sacas_necessarias, 1),
-            "Custo (R$)": round(custo_semana, 2)
+            "Total/Semana (kg)": round(racao_semana, 1),
+            "Sacas de 25 kg": round(sacas_necessarias, 1),
+            "Custo/Semana (R$)": round(custo_semana, 2)
         })
 
 # --- EXIBIÇÃO DOS RESULTADOS ---
