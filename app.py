@@ -1,19 +1,20 @@
 import streamlit as st
 import pandas as pd
 
-# CONFIGURAÇÃO DA PÁGINA
+# --- CONFIGURAÇÃO E CSS (MANTIDO) ---
 st.set_page_config(page_title="Simulador Algomix", layout="wide")
 
-# --- CSS PARA ESTILIZAR (OPCIONAL) ---
 st.markdown("""
     <style>
-    .big-font { font-size:24px !important; font-weight: bold; color: #003366; }
     .metric-box { background-color: #f0f2f6; padding: 15px; border-radius: 10px; border-left: 5px solid #003366; }
+    /* Ajuste de margem para o título */
+    .stApp > header { visibility: hidden; }
+    h1 { margin-top: 0px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DADOS FIXOS DA TABELA (SEU SEGREDO INDUSTRIAL) ---
-# Transcrito exatamente das colunas fixas e fórmulas enviadas
+# --- DADOS FIXOS DA TABELA (SEU SEGREDO INDUSTRIAL - MANTIDO) ---
+# [O código com os 34 dicionários (dados_base) permanece aqui]
 dados_base = [
     # Fator de ajuste: Nas primeiras semanas sua fórmula é (PesoInicial + X%). 
     # Da semana 16 em diante é Média (Inicial+Final)/2.
@@ -33,7 +34,6 @@ dados_base = [
     {"semana": 13, "fase": "Engorda 1",  "dias": 91, "p_ini": 146.786, "p_fim": 182.281, "bio": 0.0380, "fator_ajuste": 0.10, "tipo_calc": "fator"},
     {"semana": 14, "fase": "Engorda 1",  "dias": 98, "p_ini": 182.281, "p_fim": 219.497, "bio": 0.0350, "fator_ajuste": 0.10, "tipo_calc": "fator"},
     {"semana": 15, "fase": "Engorda 1",  "dias": 105,"p_ini": 219.497, "p_fim": 261.750, "bio": 0.0330, "fator_ajuste": 0.10, "tipo_calc": "fator"},
-    # A partir daqui (Semana 16), a fórmula muda para média simples (Inicial+Final)/2
     {"semana": 16, "fase": "Engorda 2",  "dias": 112,"p_ini": 261.750, "p_fim": 304.033, "bio": 0.0300, "tipo_calc": "media"},
     {"semana": 17, "fase": "Engorda 2",  "dias": 119,"p_ini": 304.033, "p_fim": 349.872, "bio": 0.0280, "tipo_calc": "media"},
     {"semana": 18, "fase": "Engorda 2",  "dias": 126,"p_ini": 349.872, "p_fim": 400.737, "bio": 0.0270, "tipo_calc": "media"},
@@ -55,59 +55,66 @@ dados_base = [
     {"semana": 34, "fase": "Engorda 3",  "dias": 238,"p_ini": 1171.501,"p_fim": 1231.925,"bio": 0.0140, "tipo_calc": "media"},
 ]
 
-# --- INTERFACE LATERAL (INPUTS GERAIS) ---
-st.sidebar.image("https://algomix.com.br/wp-content/uploads/2021/08/logo-algomix.png", width=200) # Tentei pegar logo da web, se não carregar, remova
+# --- INTERFACE LATERAL (INPUTS GERAIS - MANTIDO) ---
+st.sidebar.image("https://www.algomix.com.br/images/img_logo.webp", width=200) # Mantém o logo no sidebar
 st.sidebar.header("Parâmetros da Simulação")
 
 qtd_peixes = st.sidebar.number_input("Quantidade de Peixes", value=100000, step=1000)
 peso_inicial_user = st.sidebar.number_input("Peso Inicial (g) para Simulação", value=0.5)
-peso_final_user = st.sidebar.number_input("Peso Final (g) para Simulação", value=850.0)
+peso_final_user = st.sidebar.number_input("Peso Final (g) para Simulação", value=1000.0) # Ajustado para 1000g padrão
 
 st.sidebar.markdown("---")
 st.sidebar.info("Desenvolvido para Equipe Algomix")
 
-# --- CORPO PRINCIPAL (PREÇOS) ---
-st.title("🐟 Simulador de Custo - Tilápia")
-st.markdown("Insira os valores da **SACA (25kg)** para cada fase:")
+# --- CORPO PRINCIPAL (LOGO, TÍTULO e PREÇOS) ---
+
+# 1. Logo no topo (Substitui o quadro vermelho)
+st.image("https://www.algomix.com.br/images/img_logo.webp", width=300)
+
+# 6. Novo Título
+st.title("SIMULADOR FISHMIX ALGOMIX")
+
+# 2. Instrução para preço por KG (CORRIGIDO)
+st.markdown("Insira os valores do **Preço por KG de Ração** para cada fase:")
 
 col1, col2, col3 = st.columns(3)
 
+# 2. Rótulos de Preço por KG (CORRIGIDO)
 with col1:
     st.subheader("Fase Inicial")
-    p_bercario1 = st.number_input("Preço Saca - Berçário 1", value=115.41)
-    p_bercario2 = st.number_input("Preço Saca - Berçário 2", value=104.60)
+    p_kg_bercario1 = st.number_input("Preço por Kg - Berçário 1", value=4.62) # Valor da saca dividido por 25 = 4.616
+    p_kg_bercario2 = st.number_input("Preço por Kg - Berçário 2", value=4.18)
 
 with col2:
     st.subheader("Recria")
-    p_recria1 = st.number_input("Preço Saca - Recria 1", value=89.76)
-    p_recria2 = st.number_input("Preço Saca - Recria 2", value=69.50)
+    p_kg_recria1 = st.number_input("Preço por Kg - Recria 1", value=3.59)
+    p_kg_recria2 = st.number_input("Preço por Kg - Recria 2", value=2.78)
 
 with col3:
     st.subheader("Engorda")
-    p_engorda1 = st.number_input("Preço Saca - Engorda 1", value=66.00)
-    p_engorda2 = st.number_input("Preço Saca - Engorda 2", value=62.25)
-    p_engorda3 = st.number_input("Preço Saca - Engorda 3", value=62.25)
+    p_kg_engorda1 = st.number_input("Preço por Kg - Engorda 1", value=2.64)
+    p_kg_engorda2 = st.number_input("Preço por Kg - Engorda 2", value=2.49)
+    p_kg_engorda3 = st.number_input("Preço por Kg - Engorda 3", value=2.49)
 
-# Mapeamento de Preços por Fase
-precos_map = {
-    "Berçário 1": p_bercario1,
-    "Berçário 2": p_bercario2,
-    "Recria 1": p_recria1,
-    "Recria 2": p_recria2,
-    "Engorda 1": p_engorda1,
-    "Engorda 2": p_engorda2,
-    "Engorda 3": p_engorda3
+# Mapeamento de Preços por Fase (AGORA USANDO PREÇO POR KG DIRETAMENTE)
+precos_kg_map = {
+    "Berçário 1": p_kg_bercario1,
+    "Berçário 2": p_kg_bercario2,
+    "Recria 1": p_kg_recria1,
+    "Recria 2": p_kg_recria2,
+    "Engorda 1": p_kg_engorda1,
+    "Engorda 2": p_kg_engorda2,
+    "Engorda 3": p_kg_engorda3
 }
 
-# --- CÁLCULOS ---
+# --- CÁLCULOS (LÓGICA CORRIGIDA PARA USAR PREÇO POR KG DIRETO) ---
 resultados = []
 custo_total_acumulado = 0
 racao_total_acumulada = 0
+KG_SACA = 25.0
 
 for linha in dados_base:
     # Verificação se a semana está dentro do range de peso solicitado pelo cliente
-    # A lógica: Se o peso inicial da semana é menor que o peso final desejado 
-    # E o peso final da semana é maior que o peso inicial desejado
     dentro_do_range = (linha["p_ini"] < peso_final_user) and (linha["p_fim"] > peso_inicial_user)
     
     if dentro_do_range:
@@ -125,16 +132,15 @@ for linha in dados_base:
         # 3. Cálculo Ração Semana (kg)
         racao_semana = racao_dia * 7
         
-        # 4. Custos
-        preco_saca = precos_map[linha["fase"]]
-        preco_kg = preco_saca / 25.0
+        # 4. Custos (AGORA USA O VALOR DE KG DIRETO)
+        preco_kg = precos_kg_map[linha["fase"]]
         custo_semana = racao_semana * preco_kg
         
         # Acumula Totais
         custo_total_acumulado += custo_semana
         racao_total_acumulada += racao_semana
         
-        sacas_necessarias = racao_semana / 25.0
+        sacas_necessarias = racao_semana / KG_SACA
         
         resultados.append({
             "Fase": linha["fase"],
@@ -152,20 +158,27 @@ if len(resultados) > 0:
     st.markdown("---")
     st.subheader("📊 Resultado da Simulação")
     
-    # Métricas Principais
+    # Métricas Principais (MANTIDO)
     m1, m2, m3, m4 = st.columns(4)
     m1.markdown(f"<div class='metric-box'><b>Custo Total</b><br>R$ {custo_total_acumulado:,.2f}</div>", unsafe_allow_html=True)
     m2.markdown(f"<div class='metric-box'><b>Total Ração</b><br>{racao_total_acumulada/1000:,.1f} Ton</div>", unsafe_allow_html=True)
-    m3.markdown(f"<div class='metric-box'><b>Total Sacas</b><br>{racao_total_acumulada/25:,.0f} sc</div>", unsafe_allow_html=True)
+    m3.markdown(f"<div class='metric-box'><b>Total Sacas</b><br>{racao_total_acumulada/KG_SACA:,.0f} sc</div>", unsafe_allow_html=True)
     if qtd_peixes > 0:
         custo_por_peixe = custo_total_acumulado / qtd_peixes
         m4.markdown(f"<div class='metric-box'><b>Custo/Peixe</b><br>R$ {custo_por_peixe:,.2f}</div>", unsafe_allow_html=True)
 
-    # Tabela Detalhada
+    # 4. Tabela Detalhada (CORRIGIDO para não ter rolagem interna - melhor para impressão)
     st.write("")
     st.write("### Detalhamento Semana a Semana")
     df = pd.DataFrame(resultados)
-    st.dataframe(df, use_container_width=True)
+    st.table(df) # Alterado de st.dataframe para st.table para forçar a exibição completa
     
 else:
     st.warning("Nenhuma semana encontrada para esse intervalo de peso.")
+    
+st.markdown("---")
+
+# 3. Créditos do Desenvolvedor (ADICIONADO)
+st.markdown("""
+    **Desenvolvido por:** **DEONIR BLOEMER** *Médico Veterinário CRMV PR 11906*
+    """)
