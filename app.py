@@ -1,24 +1,28 @@
 import streamlit as st
 import pandas as pd
+import math
 
-# --- CONFIGURAÇÃO E CSS (MANTIDO) ---
+# --- CONFIGURAÇÃO E CSS (Otimizado para impressão) ---
 st.set_page_config(page_title="Simulador Algomix", layout="wide")
 
 st.markdown("""
     <style>
+    /* Otimização para Impressão */
+    @media print {
+        body { margin: 0; padding: 0; }
+        .stApp { padding: 0 !important; }
+        /* Força o conteúdo a caber na largura (Paisagem) */
+        .main { width: 100% !important; max-width: 100% !important; }
+    }
     .metric-box { background-color: #f0f2f6; padding: 15px; border-radius: 10px; border-left: 5px solid #003366; }
-    /* Ajuste de margem para o título */
     .stApp > header { visibility: hidden; }
     h1 { margin-top: 0px; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- DADOS FIXOS DA TABELA (SEU SEGREDO INDUSTRIAL - MANTIDO) ---
-# [O código com os 34 dicionários (dados_base) permanece aqui]
+# ... (O array 'dados_base' de 34 semanas permanece igual ao código anterior) ...
 dados_base = [
-    # Fator de ajuste: Nas primeiras semanas sua fórmula é (PesoInicial + X%). 
-    # Da semana 16 em diante é Média (Inicial+Final)/2.
-    # Vou usar 'tipo_calc': 'fator' ou 'media'.
     {"semana": 1,  "fase": "Berçário 1", "dias": 7,  "p_ini": 0.500,   "p_fim": 2.500,   "bio": 0.1300, "fator_ajuste": 0.10, "tipo_calc": "fator"},
     {"semana": 2,  "fase": "Berçário 1", "dias": 14, "p_ini": 2.500,   "p_fim": 4.600,   "bio": 0.1200, "fator_ajuste": 0.15, "tipo_calc": "fator"},
     {"semana": 3,  "fase": "Berçário 2", "dias": 21, "p_ini": 4.600,   "p_fim": 7.820,   "bio": 0.0900, "fator_ajuste": 0.20, "tipo_calc": "fator"},
@@ -55,92 +59,132 @@ dados_base = [
     {"semana": 34, "fase": "Engorda 3",  "dias": 238,"p_ini": 1171.501,"p_fim": 1231.925,"bio": 0.0140, "tipo_calc": "media"},
 ]
 
-# --- INTERFACE LATERAL (INPUTS GERAIS - MANTIDO) ---
-st.sidebar.image("https://www.algomix.com.br/images/img_logo.webp", width=200) # Mantém o logo no sidebar
-st.sidebar.header("Parâmetros da Simulação")
+# --- MAPEAMENTO DE OPÇÕES DE RAÇÃO (NOVO) ---
+# Usando preços médios sugeridos para preenchimento inicial
+OPCOES_RACAO = {
+    "Berçário 1": {
+        "FISHMIX EVOLUTION INICIAL 45% PÓ": 4.62, 
+        "FISHMIX EVOLUTION PRE-INICIAL 58% PÓ": 5.00 
+    },
+    "Berçário 2": {
+        "FISHMIX EVOLUTION INICIAL 42% EXT 1,4-1,7MM": 4.18
+    },
+    "Recria 1": {
+        "FISHMIX EVOLUTION INICIAL 42% EXT 2-3MM": 3.59, 
+        "FISHMIX PLUS INICIAL 33% EXT 2-3MM": 3.40
+    },
+    "Recria 2": {
+        "FISHMIX EVOLUTION 35% EXT 3-4MM": 2.78
+    },
+    "Engorda 1": {
+        "FISHMIX EVOLUTION 30% EXT 4-6MM": 2.64, 
+        "FISHMIX EVOLUTION 32% EXT 4-6MM": 2.75, 
+        "FISHMIX PLUS 31% EXT 4-6MM": 2.55
+    },
+    "Engorda 2": {
+        "FISHMIX ENGORDA 28% EXT 6-8MM": 2.49, 
+        "FISHMIX ENGORDA 28% EXT 8-10MM": 2.49, 
+        "FISHMIX EVOLUTION 30% EXT 6-8MM": 2.55, 
+        "FISHMIX EVOLUTION 32% EXT 6-8MM": 2.65, 
+        "FISHMIX PLUS 31% EXT 6-8MM": 2.45, 
+        "FISHMIX PLUS 31% EXT 8-10MM": 2.45, 
+        "FISHMIX PLUS ENGORDA 33% EXT 6-8MM": 2.60
+    },
+    "Engorda 3": {
+        "FISHMIX ENGORDA 28% EXT 6-8MM": 2.49, 
+        "FISHMIX ENGORDA 28% EXT 8-10MM": 2.49, 
+        "FISHMIX EVOLUTION 30% EXT 6-8MM": 2.55, 
+        "FISHMIX EVOLUTION 32% EXT 6-8MM": 2.65, 
+        "FISHMIX PLUS 31% EXT 6-8MM": 2.45, 
+        "FISHMIX PLUS 31% EXT 8-10MM": 2.45, 
+        "FISHMIX PLUS ENGORDA 33% EXT 6-8MM": 2.60
+    },
+}
 
+# --- INTERFACE LATERAL (MANTIDO) ---
+st.sidebar.image("https://www.algomix.com.br/images/img_logo.webp", width=200) 
+st.sidebar.header("Parâmetros da Simulação")
 qtd_peixes = st.sidebar.number_input("Quantidade de Peixes", value=100000, step=1000)
 peso_inicial_user = st.sidebar.number_input("Peso Inicial (g) para Simulação", value=0.5)
-peso_final_user = st.sidebar.number_input("Peso Final (g) para Simulação", value=1000.0) # Ajustado para 1000g padrão
+peso_final_user = st.sidebar.number_input("Peso Final (g) para Simulação", value=1000.0)
 
 st.sidebar.markdown("---")
 st.sidebar.info("Desenvolvido para Equipe Algomix")
 
 # --- CORPO PRINCIPAL (LOGO, TÍTULO e PREÇOS) ---
-
-# 1. Logo no topo (Substitui o quadro vermelho)
 st.image("https://www.algomix.com.br/images/img_logo.webp", width=300)
-
-# 6. Novo Título
 st.title("SIMULADOR FISHMIX ALGOMIX")
 
-# 2. Instrução para preço por KG (CORRIGIDO)
-st.markdown("Insira os valores do **Preço por KG de Ração** para cada fase:")
+st.markdown("Selecione o produto e ajuste o **Preço por KG de Ração** para cada fase:")
 
 col1, col2, col3 = st.columns(3)
+precos_kg_map = {}
 
-# 2. Rótulos de Preço por KG (CORRIGIDO)
-with col1:
-    st.subheader("Fase Inicial")
-    p_kg_bercario1 = st.number_input("Preço por Kg - Berçário 1", value=4.62) # Valor da saca dividido por 25 = 4.616
-    p_kg_bercario2 = st.number_input("Preço por Kg - Berçário 2", value=4.18)
+# FUNÇÃO PARA CRIAR A CAIXA DE SELEÇÃO E O INPUT DE PREÇO
+def criar_input_fase(col, fase_nome):
+    with col:
+        st.subheader(fase_nome)
+        opcoes = list(OPCOES_RACAO[fase_nome].keys())
+        produto_selecionado = st.selectbox(
+            f"Produto em {fase_nome}", 
+            opcoes, 
+            key=f"select_{fase_nome}"
+        )
+        preco_sugerido = OPCOES_RACAO[fase_nome][produto_selecionado]
+        
+        preco_input = st.number_input(
+            f"Preço por Kg - {fase_nome}", 
+            value=preco_sugerido, 
+            format="%.2f",
+            key=f"price_{fase_nome}"
+        )
+        # Associa o preço final do input ao mapeamento global de preços
+        precos_kg_map[fase_nome] = preco_input
+        st.markdown("---")
 
-with col2:
-    st.subheader("Recria")
-    p_kg_recria1 = st.number_input("Preço por Kg - Recria 1", value=3.59)
-    p_kg_recria2 = st.number_input("Preço por Kg - Recria 2", value=2.78)
+# CRIAÇÃO DOS CAMPOS POR COLUNA
+criar_input_fase(col1, "Berçário 1")
+criar_input_fase(col1, "Berçário 2")
 
-with col3:
-    st.subheader("Engorda")
-    p_kg_engorda1 = st.number_input("Preço por Kg - Engorda 1", value=2.64)
-    p_kg_engorda2 = st.number_input("Preço por Kg - Engorda 2", value=2.49)
-    p_kg_engorda3 = st.number_input("Preço por Kg - Engorda 3", value=2.49)
+criar_input_fase(col2, "Recria 1")
+criar_input_fase(col2, "Recria 2")
 
-# Mapeamento de Preços por Fase (AGORA USANDO PREÇO POR KG DIRETAMENTE)
-precos_kg_map = {
-    "Berçário 1": p_kg_bercario1,
-    "Berçário 2": p_kg_bercario2,
-    "Recria 1": p_kg_recria1,
-    "Recria 2": p_kg_recria2,
-    "Engorda 1": p_kg_engorda1,
-    "Engorda 2": p_kg_engorda2,
-    "Engorda 3": p_kg_engorda3
-}
+criar_input_fase(col3, "Engorda 1")
+criar_input_fase(col3, "Engorda 2")
+criar_input_fase(col3, "Engorda 3")
 
-# --- CÁLCULOS (LÓGICA CORRIGIDA PARA USAR PREÇO POR KG DIRETO) ---
+
+# --- CÁLCULOS (MANTIDO) ---
 resultados = []
 custo_total_acumulado = 0
 racao_total_acumulada = 0
 KG_SACA = 25.0
 
 for linha in dados_base:
-    # Verificação se a semana está dentro do range de peso solicitado pelo cliente
     dentro_do_range = (linha["p_ini"] < peso_final_user) and (linha["p_fim"] > peso_inicial_user)
     
     if dentro_do_range:
-        # 1. Definição do Peso para cálculo de ração (baseado na sua fórmula)
+        # Lógica de cálculo (Peso Base)
         if linha["tipo_calc"] == "fator":
-            # Fórmula Semanas 1-15: PesoInicial + (PesoInicial * Fator)
             peso_base_calculo = linha["p_ini"] + (linha["p_ini"] * linha["fator_ajuste"])
         else:
-            # Fórmula Semana 16+: Média (Inicial + Final) / 2
             peso_base_calculo = (linha["p_ini"] + linha["p_fim"]) / 2
         
-        # 2. Cálculo Ração Dia (kg) -> (QtdPeixes * PesoBase * %Bio) / 1000
+        # Cálculo Ração Dia e Semana
         racao_dia = (qtd_peixes * peso_base_calculo * linha["bio"]) / 1000
-        
-        # 3. Cálculo Ração Semana (kg)
         racao_semana = racao_dia * 7
         
-        # 4. Custos (AGORA USA O VALOR DE KG DIRETO)
+        # Custos (Usa o preço do mapeamento atualizado pelo input do usuário)
         preco_kg = precos_kg_map[linha["fase"]]
         custo_semana = racao_semana * preco_kg
         
-        # Acumula Totais
         custo_total_acumulado += custo_semana
         racao_total_acumulada += racao_semana
         
         sacas_necessarias = racao_semana / KG_SACA
+        
+        # Encontra o produto selecionado para exibir na tabela (NOVO)
+        produto_fase = st.session_state[f"select_{linha['fase']}"]
         
         resultados.append({
             "Fase": linha["fase"],
@@ -162,23 +206,31 @@ if len(resultados) > 0:
     m1, m2, m3, m4 = st.columns(4)
     m1.markdown(f"<div class='metric-box'><b>Custo Total</b><br>R$ {custo_total_acumulado:,.2f}</div>", unsafe_allow_html=True)
     m2.markdown(f"<div class='metric-box'><b>Total Ração</b><br>{racao_total_acumulada/1000:,.1f} Ton</div>", unsafe_allow_html=True)
-    m3.markdown(f"<div class='metric-box'><b>Total Sacas</b><br>{racao_total_acumulada/KG_SACA:,.0f} sc</div>", unsafe_allow_html=True)
+    m3.markdown(f"<div class='metric-box'><b>Total Sacas ({int(KG_SACA)}kg)</b><br>{math.ceil(racao_total_acumulada/KG_SACA):,.0f} sc</div>", unsafe_allow_html=True) # Ajustei para arredondar sacas para cima
+    
     if qtd_peixes > 0:
         custo_por_peixe = custo_total_acumulado / qtd_peixes
         m4.markdown(f"<div class='metric-box'><b>Custo/Peixe</b><br>R$ {custo_por_peixe:,.2f}</div>", unsafe_allow_html=True)
 
-    # 4. Tabela Detalhada (CORRIGIDO para não ter rolagem interna - melhor para impressão)
+    # Tabela Detalhada (Otimizada para impressão)
     st.write("")
     st.write("### Detalhamento Semana a Semana")
     df = pd.DataFrame(resultados)
-    st.table(df) # Alterado de st.dataframe para st.table para forçar a exibição completa
+    
+    # Otimização da Tabela para Impressão
+    st.table(df[['Fase', 'Produto', 'Semana', 'Peso Inicial (g)', 'Peso Final (g)', 'Total Ração (kg)', 'Sacas', 'Custo (R$)']])
+    
+    st.markdown("---")
+    
+    # 5. Instruções de Impressão (NOVO)
+    st.warning("⚠️ **Dica de Impressão/PDF:** Use o atalho **Ctrl+P** (ou Cmd+P no Mac). Para evitar que a tabela seja cortada, configure o **Layout** para **Paisagem** e a **Escala** para 70-80% no menu de impressão do seu navegador.")
     
 else:
     st.warning("Nenhuma semana encontrada para esse intervalo de peso.")
     
 st.markdown("---")
 
-# 3. Créditos do Desenvolvedor (ADICIONADO)
+# 3. Créditos do Desenvolvedor (MANTIDO)
 st.markdown("""
     **Desenvolvido por:** **DEONIR BLOEMER** *Médico Veterinário CRMV PR 11906*
     """)
