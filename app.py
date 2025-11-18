@@ -26,7 +26,7 @@ st.markdown("""
         header, footer, [data-testid="stToolbar"] { visibility: hidden !important; }
 
     }
-    .metric-box { background-color: #f0f2f6; padding: 15px; border-radius: 10px; border-left: 5px solid #003366; }
+    .metric-box { background-color: #f0f2f6; padding: 15px; border-radius: 10px; border-left: 5px solid #003366; color: #003366; }
     .stApp > header { visibility: hidden; }
     h1 { margin-top: 0px; }
     </style>
