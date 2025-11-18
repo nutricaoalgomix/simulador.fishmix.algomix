@@ -233,12 +233,19 @@ if len(resultados) > 0:
     # Otimização da Tabela para Impressão
     st.table(df[['Fase', 'Produto', 'Semana', 'Peso Inicial (g)', 'Peso Final (g)', 'Ração/Semana (kg)', 'Ração/Semana (sacas de 25kg)', 'Custo/Semana (R$)']])
     
+# ... (código antes da dica de impressão) ...
+    
     st.markdown("---")
     
-    # 5. Instruções de Impressão (NOVO)
-    st.warning("⚠️ **Dica de Impressão/PDF:** Use o atalho **Ctrl+P** (ou Cmd+P no Mac). Para evitar que a tabela seja cortada, configure o **Layout** para **Paisagem** e a **Escala** para 70-80% no menu de impressão do seu navegador.")
+    # 5. Instruções de Impressão (AGORA MAIS CLARAS)
+    st.warning("""
+    ⚠️ **Dica de Impressão/PDF:** 1. **NÃO use Ctrl+P!** Clique nos **três pontos (⋮)** no canto superior direito do seu navegador e selecione **Imprimir**.
+    2. No menu de impressão, escolha **Salvar como PDF** e defina o **Layout** como **Paisagem**.
+    3. Em **Mais definições** (ou Escala), ajuste o valor para **70%** ou **65%** para garantir que todo o conteúdo caiba em uma única página.
+    """)
     
 else:
+# ... (restante do código) ...
     st.warning("Nenhuma semana encontrada para esse intervalo de peso.")
     
 st.markdown("---")
