@@ -2,17 +2,29 @@ import streamlit as st
 import pandas as pd
 import math
 
-# --- CONFIGURAÇÃO E CSS (Otimizado para impressão) ---
+# --- CONFIGURAÇÃO E CSS (Otimizado para impressão e esconder sidebar) ---
 st.set_page_config(page_title="Simulador Algomix", layout="wide")
 
 st.markdown("""
     <style>
     /* Otimização para Impressão */
     @media print {
-        body { margin: 0; padding: 0; }
-        .stApp { padding: 0 !important; }
-        /* Força o conteúdo a caber na largura (Paisagem) */
-        .main { width: 100% !important; max-width: 100% !important; }
+        /* Esconde a barra lateral (Sidebar) para liberar espaço) */
+        [data-testid="stSidebar"] {
+            display: none !important; 
+            visibility: hidden;
+            width: 0px !important;
+        }
+        /* Força o conteúdo principal a ocupar a largura total, removendo margens */
+        .main {
+            padding: 0px !important; 
+            margin: 0px !important; 
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        /* Esconde elementos de menu e outros itens desnecessários */
+        header, footer, [data-testid="stToolbar"] { visibility: hidden !important; }
+
     }
     .metric-box { background-color: #f0f2f6; padding: 15px; border-radius: 10px; border-left: 5px solid #003366; }
     .stApp > header { visibility: hidden; }
