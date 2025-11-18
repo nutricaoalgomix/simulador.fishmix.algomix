@@ -193,9 +193,9 @@ for linha in dados_base:
             "Peso Inicial (g)": linha["p_ini"],
             "Peso Final (g)": linha["p_fim"],
             "Ração/Dia (kg)": round(racao_dia, 1),
-            "Total Ração (kg)": round(racao_semana, 1),
-            "Sacas": round(sacas_necessarias, 1),
-            "Custo (R$)": round(custo_semana, 2)
+            "Ração/Semana (kg)": round(racao_semana, 1),
+            "Ração/Semana (sacas de 25kg)": round(sacas_necessarias, 1),
+            "Custo/Semana (R$)": round(custo_semana, 2)
         })
 
 # --- EXIBIÇÃO DOS RESULTADOS ---
@@ -219,7 +219,7 @@ if len(resultados) > 0:
     df = pd.DataFrame(resultados)
     
     # Otimização da Tabela para Impressão
-    st.table(df[['Fase', 'Produto', 'Semana', 'Peso Inicial (g)', 'Peso Final (g)', 'Total Ração (kg)', 'Sacas', 'Custo (R$)']])
+    st.table(df[['Fase', 'Produto', 'Semana', 'Peso Inicial (g)', 'Peso Final (g)', 'Ração/Semana (kg)', 'Ração/Semana (sacas de 25kg)', 'Custo/Semana (R$)']])
     
     st.markdown("---")
     
